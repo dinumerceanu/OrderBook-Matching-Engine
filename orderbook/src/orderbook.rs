@@ -1,6 +1,8 @@
+use core::fmt;
 use std::collections::{BTreeMap, VecDeque};
 use crate::orders::{LimitOrder, MarketOrder, MarketSide, Orders};
 
+#[derive(Debug)]
 pub struct OrderBook {
     bids: BTreeMap<usize, VecDeque<LimitOrder>>,
     asks: BTreeMap<usize, VecDeque<LimitOrder>>,
@@ -44,5 +46,28 @@ impl OrderBook {
 
     fn match_order(&mut self, market_order: MarketOrder) {
         todo!()
+    }
+}
+
+impl fmt::Display for OrderBook {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "OrderBook:")?;
+        writeln!(f, "Bids:")?;
+        for (price, orders) in &self.bids {
+            write!(f, "  {} -> ", price)?;
+            for o in orders {
+                write!(f, "{} ", o)?;
+            }
+            writeln!(f)?;
+        }
+        writeln!(f, "Asks:")?;
+        for (price, orders) in &self.asks {
+            write!(f, "  {} -> ", price)?;
+            for o in orders {
+                write!(f, "{} ", o)?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }

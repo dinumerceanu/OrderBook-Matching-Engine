@@ -1,3 +1,5 @@
+use core::fmt;
+
 use chrono::{DateTime, Utc};
 
 use crate::client_handler::Client;
@@ -81,6 +83,12 @@ impl LimitOrder {
 
     pub fn client(&self) -> &Client {
         &self.client
+    }
+}
+
+impl fmt::Display for LimitOrder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LimitOrder: size: {}", self.size)
     }
 }
 
