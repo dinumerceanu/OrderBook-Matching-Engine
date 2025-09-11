@@ -1,48 +1,90 @@
 use chrono::{DateTime, Utc};
 
+use crate::client_handler::Client;
+
+#[derive(Debug)]
 pub enum MarketSide {
     Bid,
     Ask,
 }
 
+#[derive(Debug)]
 pub struct MarketOrder {
-    client_id: usize,
     timestamp: DateTime<Utc>,
     size: usize,
     side: MarketSide,
+    client: Client,
 }
 
 impl MarketOrder {
-    pub fn new(client_id: usize, timestamp: DateTime<Utc>, size: usize, side: MarketSide) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, size: usize, side: MarketSide, client: Client) -> Self {
         MarketOrder {
-            client_id,
             timestamp,
             size,
             side,
+            client,
         }
+    }
+
+    pub fn timestamp(&self) -> &DateTime<Utc> {
+        &self.timestamp
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    pub fn side(&self) -> &MarketSide {
+        &self.side
+    }
+
+    pub fn client(&self) -> &Client {
+        &self.client
     }
 }
 
+#[derive(Debug)]
 pub struct LimitOrder {
-    client_id: usize,
     timestamp: DateTime<Utc>,
     size: usize,
     side: MarketSide,
     price: usize,
+    client: Client,
 }
 
 impl LimitOrder {
-    pub fn new(client_id: usize, timestamp: DateTime<Utc>, size: usize, side: MarketSide, price: usize) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, size: usize, side: MarketSide, price: usize, client: Client) -> Self {
         LimitOrder {
-            client_id,
             timestamp,
             size,
             side,
             price,
+            client,
         }
+    }
+
+    pub fn timestamp(&self) -> &DateTime<Utc> {
+        &self.timestamp
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    pub fn side(&self) -> &MarketSide {
+        &self.side
+    }
+
+    pub fn price(&self) -> usize {
+        self.price
+    }
+
+    pub fn client(&self) -> &Client {
+        &self.client
     }
 }
 
+#[derive(Debug)]
 pub enum Orders {
     Market(MarketOrder),
     Limit(LimitOrder),
