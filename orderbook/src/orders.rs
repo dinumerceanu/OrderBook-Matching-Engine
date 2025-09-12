@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 
 use crate::client_handler::Client;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum MarketSide {
     Bid,
     Ask,

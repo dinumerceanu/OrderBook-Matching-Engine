@@ -3,7 +3,7 @@ use orderbook::{client_handler::Client, orders::*};
 use tokio::{
     io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader}, net::{TcpListener, TcpStream}, sync::mpsc
 };
-use std::{net::SocketAddr, time::Duration};
+use std::{net::SocketAddr};
 
 pub fn create_order(input: &str, client: Client) -> Option<Orders> {
     let parts: Vec<&str> = input.trim().split_whitespace().collect();
@@ -50,16 +50,8 @@ async fn handle_client(stream: TcpStream, sockaddr: SocketAddr, tx_ob: mpsc::Unb
                 Ok(_) => {
                     let order = create_order(&line, client.clone()).unwrap();
                     println!("Received order: {:?}", order);
-                    match order {
-                        Orders::Limit(limit_order) => {
-                            if let Err(e) = tx_ob.send(Orders::Limit(limit_order)) {
-                                eprintln!("Error sending order to OrderBook: {e}");
-                            }
-                        },
-                        Orders::Market(market_order) => {
-                            todo!()
-                            //match orders
-                        },
+                    if let Err(e) = tx_ob.send(order) {
+                        eprintln!("Error sending order to OrderBook: {e}");
                     }
                     line.clear();
                 },
@@ -135,8 +127,9 @@ async fn main() -> io::Result<()> {
         }
     };
 
+    tokio::spawn(orderbook_handler_future);
+
     tokio::select! {
-        _ = orderbook_handler_future => {},
         _ = client_handler_future => {},
         _ = tokio::signal::ctrl_c() => {
             println!("\nCtrl-C received. Shutting down server gracefully...");
