@@ -17,13 +17,13 @@ pub fn create_order(input: &str, client: Client) -> Option<Orders> {
     match parts[1].to_lowercase().as_str() {
         "market" => {
             let qty: usize = parts[2].parse().unwrap();
-            Some(MarketOrder::new(Utc::now(), qty, side.unwrap(), client).into())
+            Some(MarketOrder::new(Utc::now(), qty, 0, side.unwrap(), client).into())
         }
 
         "limit" => {
             let price: usize = parts[2].parse().unwrap();
             let qty: usize = parts[3].parse().unwrap();
-            Some(LimitOrder::new(Utc::now(), qty, side.unwrap(), price, client).into())
+            Some(LimitOrder::new(Utc::now(), qty, 0, side.unwrap(), price, client).into())
         },
 
         _ => None,
@@ -49,7 +49,6 @@ async fn handle_client(stream: TcpStream, sockaddr: SocketAddr, tx_ob: mpsc::Unb
                 },
                 Ok(_) => {
                     let order = create_order(&line, client.clone()).unwrap();
-                    println!("Received order: {:?}", order);
                     if let Err(e) = tx_ob.send(order) {
                         eprintln!("Error sending order to OrderBook: {e}");
                     }

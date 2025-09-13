@@ -14,15 +14,17 @@ pub enum MarketSide {
 pub struct MarketOrder {
     timestamp: DateTime<Utc>,
     size: usize,
+    fill_size: usize,
     side: MarketSide,
     client: Client,
 }
 
 impl MarketOrder {
-    pub fn new(timestamp: DateTime<Utc>, size: usize, side: MarketSide, client: Client) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, size: usize, fill_size: usize, side: MarketSide, client: Client) -> Self {
         MarketOrder {
             timestamp,
             size,
+            fill_size,
             side,
             client,
         }
@@ -34,6 +36,14 @@ impl MarketOrder {
 
     pub fn size(&self) -> usize {
         self.size
+    }
+
+    pub fn fill_size(&self) -> usize {
+        self.fill_size
+    }
+
+    pub fn set_fill_size(&mut self, fill_size: usize) {
+        self.fill_size = fill_size;
     }
 
     pub fn side(&self) -> &MarketSide {
@@ -49,16 +59,18 @@ impl MarketOrder {
 pub struct LimitOrder {
     timestamp: DateTime<Utc>,
     size: usize,
+    fill_size: usize,
     side: MarketSide,
     price: usize,
     client: Client,
 }
 
 impl LimitOrder {
-    pub fn new(timestamp: DateTime<Utc>, size: usize, side: MarketSide, price: usize, client: Client) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, size: usize, fill_size: usize, side: MarketSide, price: usize, client: Client) -> Self {
         LimitOrder {
             timestamp,
             size,
+            fill_size,
             side,
             price,
             client,
@@ -71,6 +83,14 @@ impl LimitOrder {
 
     pub fn size(&self) -> usize {
         self.size
+    }
+
+    pub fn fill_size(&self) -> usize {
+        self.fill_size
+    }
+
+    pub fn set_fill_size(&mut self, fill_size: usize) {
+        self.fill_size = fill_size;
     }
 
     pub fn side(&self) -> &MarketSide {
@@ -88,7 +108,7 @@ impl LimitOrder {
 
 impl fmt::Display for LimitOrder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "LimitOrder: size: {}", self.size)
+        write!(f, "LimitOrder: size: {}, fill_size: {}", self.size, self.fill_size)
     }
 }
 

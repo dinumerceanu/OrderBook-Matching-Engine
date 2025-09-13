@@ -1,7 +1,6 @@
 use core::fmt;
 use std::{collections::{BTreeMap, VecDeque}};
 use crate::orders::{LimitOrder, MarketOrder, MarketSide, Orders};
-use crate::client_handler::Client;
 
 #[derive(Debug)]
 pub struct OrderBook {
@@ -57,22 +56,33 @@ impl OrderBook {
         }
     }
 
-    fn match_order(&mut self, market_order: MarketOrder) {
+    fn match_order(&mut self, mut market_order: MarketOrder) {
         match market_order.side() {
             MarketSide::Ask => {
-                let mut market_order_size = market_order.size();
-                while market_order_size > 0 {
+                loop {
+                    let available_market_order_size = market_order.size() - market_order.fill_size();
+
+                    if available_market_order_size == 0 {
+                        break;
+                    }
+                    
                     if let Some((price, orders_queue)) = self.get_best_bid() {
                         loop {
-                            if let Some(order) = orders_queue.pop_front() {
-                                let limit_order_size = order.size();
+                            let available_market_order_size = market_order.size() - market_order.fill_size();
+                            if available_market_order_size <= 0 {
+                                break;
+                            }
+                            if let Some(mut limit_order) = orders_queue.pop_front() {
+                                let available_limit_order_size = limit_order.size() - limit_order.fill_size();
 
-                                if limit_order_size < market_order_size {
+                                if available_limit_order_size < available_market_order_size {
+                                    println!("if1");
                                     let msg_full_fill = format!("Order filled!");
-                                    let msg_partial_fill = format!("Partial fill [{}/{}]", limit_order_size, market_order_size);
-                                    let limit_client_tx = order.client().tx();
+                                    let msg_partial_fill = format!("Order filled [{}/{}] at {}", available_limit_order_size, market_order.size(), limit_order.price());
+                                    let limit_client_tx = limit_order.client().tx();
                                     let market_client_tx = market_order.client().tx();
-                                    market_order_size -= limit_order_size;
+                                    market_order.set_fill_size(market_order.fill_size() + available_limit_order_size);
+
                                     tokio::spawn(async move {
                                         if let Err(e) = limit_client_tx.send(msg_full_fill).await {
                                             eprintln!("Error writing to channel: {e}");
@@ -83,36 +93,35 @@ impl OrderBook {
                                             eprintln!("Error writing to channel: {e}");
                                         }
                                     });
-                                } else if limit_order_size == market_order_size {
-                                    market_order_size = 0;
-                                    let msg_full_fill = format!("Order filled!");
-                                    let msg_full_fill_clone = msg_full_fill.clone();
-                                    let limit_client_tx = order.client().tx();
+                                } else if available_limit_order_size == available_market_order_size {
+                                    println!("if2");
+                                    let msg_market_client = format!("Order filled [{}/{}] at {}", available_market_order_size, market_order.size(), limit_order.price());
+                                    let limit_client_tx = limit_order.client().tx();
                                     let market_client_tx = market_order.client().tx();
+                                    market_order.set_fill_size(market_order.fill_size() + available_market_order_size);
                                     tokio::spawn(async move {
-                                        if let Err(e) = limit_client_tx.send(msg_full_fill).await {
+                                        let msg = format!("Order filled [{}/{}]", available_limit_order_size, limit_order.size());
+                                        if let Err(e) = limit_client_tx.send(msg).await {
                                             eprintln!("Error writing to channel: {e}");
                                         }
                                     });
                                     tokio::spawn(async move {
-                                        if let Err(e) = market_client_tx.send(msg_full_fill_clone).await {
+                                        if let Err(e) = market_client_tx.send(msg_market_client).await {
                                             eprintln!("Error writing to channel: {e}");
                                         }
                                     });
                                     break;
                                 } else {
                                     // limit size > market size
-                                    let msg_full_fill = format!("Order filled!");
-                                    let msg_partial_fill = format!("Partial fill [{}/{}]", market_order_size, limit_order_size);
-                                    let limit_client_tx = order.client().tx();
+                                    println!("if3");
+                                    let msg_full_fill = format!("Order filled [{}/{}] at {}", available_market_order_size, market_order.size(), limit_order.price());
+                                    let msg_partial_fill = format!("Order filled [{}/{}]", available_market_order_size, limit_order.size());
+                                    let limit_client_tx = limit_order.client().tx();
                                     let market_client_tx = market_order.client().tx();
                                     // UPDATE THE EXISTING LIMIT ORDER
-                                    let old_ts = *order.timestamp();
-                                    let old_side = *order.side();
-                                    let client = Client::new(order.client().tx(), order.client().sockaddr());
-                                    let new_limit_order = LimitOrder::new(old_ts, limit_order_size - market_order_size, old_side, order.price(), client);
-                                    orders_queue.push_front(new_limit_order);
-                                    market_order_size = 0;
+                                    limit_order.set_fill_size(limit_order.fill_size() + available_market_order_size);
+                                    market_order.set_fill_size(market_order.fill_size() + available_market_order_size);
+                                    orders_queue.push_front(limit_order);
                                     tokio::spawn(async move {
                                         if let Err(e) = limit_client_tx.send(msg_partial_fill).await {
                                             eprintln!("Error writing to channel: {e}");
@@ -133,6 +142,13 @@ impl OrderBook {
                         }
                     } else {
                         println!("There are no bids!");
+                        let unmatched_orders = market_order.size() - market_order.fill_size();
+                        let msg = format!("Unfilled [{}/{}]", unmatched_orders, market_order.size());
+                        tokio::spawn(async move {
+                            if let Err(e) = market_order.client().tx().send(msg).await {
+                                eprintln!("Error writing to channel: {e}");
+                            }
+                        });
                         break;
                     }
                 }
