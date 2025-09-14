@@ -99,6 +99,7 @@ async fn main() -> io::Result<()> {
     println!("Server listening on 127.0.0.1:8080");
 
     let (tx, mut rx) = mpsc::unbounded_channel::<Orders>();
+    let (tx_price, mut rx_price) = mpsc::unbounded_channel::<usize>();
 
     let client_handler_future = async move {
         loop {
@@ -120,13 +121,23 @@ async fn main() -> io::Result<()> {
         let mut orderbook = orderbook::orderbook::OrderBook::new();
         loop {
             if let Some(order) = rx.recv().await {
-                orderbook.handle_order(order);
+                orderbook.handle_order(order, tx_price.clone());
                 println!("{orderbook}");
             }
         }
     };
 
+    let price_showcase_future = async move {
+        loop {
+            if let Some(price) = rx_price.recv().await {
+                println!("Price: {}", price);
+            }
+        }
+    };
+
     tokio::spawn(orderbook_handler_future);
+
+    tokio::spawn(price_showcase_future);
 
     tokio::select! {
         _ = client_handler_future => {},
