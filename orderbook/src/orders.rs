@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 
 use crate::client_handler::Client;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MarketSide {
     Bid,
     Ask,
@@ -46,8 +46,8 @@ impl MarketOrder {
         self.fill_size = fill_size;
     }
 
-    pub fn side(&self) -> &MarketSide {
-        &self.side
+    pub fn side(&self) -> MarketSide {
+        self.side
     }
 
     pub fn client(&self) -> &Client {
@@ -93,8 +93,8 @@ impl LimitOrder {
         self.fill_size = fill_size;
     }
 
-    pub fn side(&self) -> &MarketSide {
-        &self.side
+    pub fn side(&self) -> MarketSide {
+        self.side
     }
 
     pub fn price(&self) -> usize {
