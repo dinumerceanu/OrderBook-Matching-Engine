@@ -156,6 +156,7 @@ async fn main() -> io::Result<()> {
     tokio::spawn(orderbook_handler_future);
 
     // tokio::spawn(price_showcase_future);
+    //
 
     tokio::select! {
         _ = client_handler_future => {},
