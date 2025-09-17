@@ -21,10 +21,10 @@ pub async fn main() -> io::Result<()> {
         let order_task = tokio::spawn(async move {
             if let Ok(mut conn) = TcpStream::connect("127.0.0.1:8080").await {
                 if let Err(e) = conn.write_all(cmd.as_bytes()).await {
-                    eprintln!("Eroare trimitere {cmd}: {e}");
+                    eprintln!("Error sending {cmd}: {e}");
                 }
             } else {
-                eprintln!("Nu pot conecta pentru {cmd}");
+                eprintln!("Cannont connect to server for {cmd}");
             }
         });
 

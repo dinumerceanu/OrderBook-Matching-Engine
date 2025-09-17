@@ -28,10 +28,10 @@ async fn client_loop(id: usize) {
 
         if let Ok(mut conn) = TcpStream::connect("127.0.0.1:8080").await {
             if let Err(e) = conn.write_all(cmd.as_bytes()).await {
-                eprintln!("[client {id}] Eroare trimitere `{cmd}`: {e}");
+                eprintln!("[client {id}] error sending `{cmd}`: {e}");
             }
         } else {
-            eprintln!("[client {id}] Nu pot conecta");
+            eprintln!("[client {id}] cannot connect");
         }
 
         sleep(Duration::from_millis(delay)).await;
