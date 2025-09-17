@@ -5,15 +5,15 @@ use tokio::{
 };
 
 #[tokio::main]
-async fn main() -> io::Result<()> {
+pub async fn main() -> io::Result<()> {
     let mut tasks = Vec::new();
     let mut rng = rng();
 
-    let total_orders = 20;
+    let total_orders = 50;
 
     for _ in 0..total_orders {
         let side = if rng.random_bool(0.5) { "buy" } else { "sell" };
-        let price: usize = rng.random_range(90..=110);
+        let price: usize = rng.random_range(80..=150);
         let qty: usize = rng.random_range(1..=10);
 
         let cmd = format!("{side} limit {price} {qty}\n");

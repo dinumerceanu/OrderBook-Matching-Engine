@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{collections::{BTreeMap, VecDeque}};
+use std::{collections::{BTreeMap, VecDeque}, sync::{atomic::AtomicU64, Arc}};
 use tokio::sync::mpsc;
 
 use crate::orders::{LimitOrder, MarketOrder, MarketSide, Orders};
@@ -18,13 +18,15 @@ impl OrderBook {
         }
     }
 
-    pub fn handle_order(&mut self, order: Orders, tx_price: mpsc::UnboundedSender<usize>) {
+    pub fn handle_order(&mut self, order: Orders, tx_price: mpsc::UnboundedSender<usize>, counter: Arc<AtomicU64>) {
         match order {
             Orders::Market(market_order) => {
                 self.match_order(market_order, tx_price);
+                Self::increment(counter);
             },
             Orders::Limit(limit_order) => {
                 self.add_order(limit_order);
+                Self::increment(counter);
             }
         }
     }
@@ -60,6 +62,10 @@ impl OrderBook {
                 eprintln!("Error writing price on channel: {e}");
             }
         });
+    }
+
+    fn increment(counter: Arc<AtomicU64>) {
+        counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn get_best_bid(&mut self) -> Option<usize> {

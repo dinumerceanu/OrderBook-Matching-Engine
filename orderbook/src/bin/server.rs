@@ -3,7 +3,7 @@ use orderbook::{client_handler::Client, orders::*};
 use tokio::{
     io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader}, net::{TcpListener, TcpStream}, sync::mpsc
 };
-use std::{net::SocketAddr};
+use std::{net::SocketAddr, sync::{atomic::{AtomicU64, Ordering::Relaxed}, Arc}, time::Instant};
 
 pub fn create_order(input: &str, client: Client) -> Option<Orders> {
     let parts: Vec<&str> = input.trim().split_whitespace().collect();
@@ -57,7 +57,7 @@ async fn handle_client(stream: TcpStream, sockaddr: SocketAddr, tx_ob: mpsc::Unb
                 Err(e) => {
                     use std::io::ErrorKind;
                     if e.kind() == ErrorKind::ConnectionReset {
-                        println!("Client {sockaddr} disconnected (connection reset).");
+                        println!("Client {sockaddr} disconnected");
                     } else {
                         eprintln!("Error reading from client {sockaddr}: {e}");
                     }
@@ -101,6 +101,11 @@ async fn main() -> io::Result<()> {
     let (tx, mut rx) = mpsc::unbounded_channel::<Orders>();
     let (tx_price, mut rx_price) = mpsc::unbounded_channel::<usize>();
 
+    let counter = Arc::new(AtomicU64::new(0));
+    let c = counter.clone();
+
+    let start = Instant::now();
+
     let client_handler_future = async move {
         loop {
             match listener.accept().await {
@@ -121,27 +126,47 @@ async fn main() -> io::Result<()> {
         let mut orderbook = orderbook::orderbook::OrderBook::new();
         loop {
             if let Some(order) = rx.recv().await {
-                orderbook.handle_order(order, tx_price.clone());
-                println!("{orderbook}");
+                orderbook.handle_order(order, tx_price.clone(), c.clone());
+                // println!("{orderbook}");
             }
         }
     };
 
-    let price_showcase_future = async move {
+    let _price_showcase_future = async move {
+        let mut stream = match TcpStream::connect("127.0.0.1:9000").await {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Unable to connect to price showcase server: {e}");
+                return;
+            }
+        };
+
         loop {
             if let Some(price) = rx_price.recv().await {
-                println!("Price: {}", price);
+                if let Err(e) = stream.write_all(format!("{}\n", price).as_bytes()).await {
+                    eprintln!("Error sending price to server {}: {}", price, e);
+                    break;
+                }
+            } else {
+                break;
             }
         }
     };
 
     tokio::spawn(orderbook_handler_future);
 
-    tokio::spawn(price_showcase_future);
+    // tokio::spawn(price_showcase_future);
 
     tokio::select! {
         _ = client_handler_future => {},
         _ = tokio::signal::ctrl_c() => {
+            let total_trades = counter.load(Relaxed);
+            let elapsed = start.elapsed().as_secs_f64();
+            println!(
+                "Total trades: {total_trades}, elapsed: {:.2}s, avg {:.2} trades/sec",
+                elapsed,
+                total_trades as f64 / elapsed
+            );
             println!("\nCtrl-C received. Shutting down server gracefully...");
         }
     }
