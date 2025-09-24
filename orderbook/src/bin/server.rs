@@ -17,13 +17,13 @@ pub fn create_order(input: &str, client: Client) -> Option<Orders> {
     match parts[1].to_lowercase().as_str() {
         "market" => {
             let qty: usize = parts[2].parse().unwrap();
-            Some(MarketOrder::new(Utc::now(), qty, 0, side.unwrap(), client).into())
+            Some(MarketOrder::new(Utc::now(), qty, 0, side.unwrap(), client, parts[3].to_string()).into())
         }
 
         "limit" => {
             let price: usize = parts[2].parse().unwrap();
             let qty: usize = parts[3].parse().unwrap();
-            Some(LimitOrder::new(Utc::now(), qty, 0, side.unwrap(), price, client).into())
+            Some(LimitOrder::new(Utc::now(), qty, 0, side.unwrap(), price, client, parts[4].to_string()).into())
         },
 
         _ => None,
@@ -127,7 +127,7 @@ async fn main() -> io::Result<()> {
         loop {
             if let Some(order) = rx.recv().await {
                 orderbook.handle_order(order, tx_price.clone(), c.clone());
-                // println!("{orderbook}");
+                println!("{orderbook}");
             }
         }
     };

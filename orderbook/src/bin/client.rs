@@ -6,7 +6,7 @@ use std::io::Write;
 
 pub fn validate_input(input: &str) -> Result<String, String> {
     let parts: Vec<&str> = input.trim().split_whitespace().collect();
-    if parts.len() < 3 {
+    if parts.len() < 4 {
         return Err("Comanda prea scurtă".into());
     }
 
@@ -18,18 +18,18 @@ pub fn validate_input(input: &str) -> Result<String, String> {
 
     match parts[1].to_lowercase().as_str() {
         "market" => {
-            if parts.len() != 3 {
-                return Err("Format market: buy/sell market <qty>".into());
+            if parts.len() != 4 {
+                return Err("Format market: buy/sell market <qty> <order_id>".into());
             }
             let qty: usize = parts[2]
                 .parse()
                 .map_err(|_| "Invalid quantity".to_string())?;
-            Ok(format!("{} market {}", side, qty))
+            Ok(format!("{} market {} id:{}", side, qty, parts[3].to_string()))
         }
 
         "limit" => {
-            if parts.len() != 4 {
-                return Err("Format limit: buy/sell limit <price> <qty>".into());
+            if parts.len() != 5 {
+                return Err("Format limit: buy/sell limit <price> <qty> <order_id>".into());
             }
             let price: usize = parts[2]
                 .parse()
@@ -37,7 +37,7 @@ pub fn validate_input(input: &str) -> Result<String, String> {
             let qty: usize = parts[3]
                 .parse()
                 .map_err(|_| "Invalid quantity".to_string())?;
-            Ok(format!("{} limit {} {}", side, price, qty))
+            Ok(format!("{} limit {} {} id:{}", side, price, qty, parts[4].to_string()))
         }
 
         _ => Err("Invalid order type: choose 'market' or 'limit'".into()),

@@ -113,8 +113,8 @@ impl OrderBook {
                         let available_limit_order_size = limit_order.size() - limit_order.fill_size();
 
                         if available_limit_order_size < available_market_order_size {
-                            let msg_full_fill = format!("Order filled [{}/{}]", available_limit_order_size, limit_order.size());
-                            let msg_partial_fill = format!("Order filled [{}/{}] at {}", available_limit_order_size, market_order.size(), limit_order.price());
+                            let msg_full_fill = format!("Order {} filled [{}/{}]", limit_order.order_id(), available_limit_order_size, limit_order.size());
+                            let msg_partial_fill = format!("Order {} filled [{}/{}] at {}", market_order.order_id(), available_limit_order_size, market_order.size(), limit_order.price());
                             
                             let limit_client_tx = limit_order.client().tx();
                             let market_client_tx = market_order.client().tx();
@@ -126,8 +126,8 @@ impl OrderBook {
                             Self::send_price(tx_price.clone(), limit_order.price());
 
                         } else if available_limit_order_size == available_market_order_size {
-                            let msg_market_client = format!("Order filled [{}/{}] at {}", available_market_order_size, market_order.size(), limit_order.price());
-                            let msg_limit_client = format!("Order filled [{}/{}]", available_limit_order_size, limit_order.size());
+                            let msg_market_client = format!("Order {} filled [{}/{}] at {}", market_order.order_id(), available_market_order_size, market_order.size(), limit_order.price());
+                            let msg_limit_client = format!("Order {} filled [{}/{}]", limit_order.order_id(), available_limit_order_size, limit_order.size());
                             let limit_client_tx = limit_order.client().tx();
                             let market_client_tx = market_order.client().tx();
                             let price = limit_order.price();
@@ -140,8 +140,8 @@ impl OrderBook {
 
                             break;
                         } else {
-                            let msg_full_fill = format!("Order filled [{}/{}] at {}", available_market_order_size, market_order.size(), limit_order.price());
-                            let msg_partial_fill = format!("Order filled [{}/{}]", available_market_order_size, limit_order.size());
+                            let msg_full_fill = format!("Order {} filled [{}/{}] at {}", market_order.order_id(), available_market_order_size, market_order.size(), limit_order.price());
+                            let msg_partial_fill = format!("Order {} filled [{}/{}]", limit_order.order_id(), available_market_order_size, limit_order.size());
 
                             let limit_client_tx = limit_order.client().tx();
                             let market_client_tx = market_order.client().tx();
@@ -186,7 +186,7 @@ impl OrderBook {
                     println!("There are no asks!"); 
                 }
                 let unmatched_orders = market_order.size() - market_order.fill_size();
-                let msg = format!("Unfilled [{}/{}]", unmatched_orders, market_order.size());
+                let msg = format!("Order {} unfilled [{}/{}]", market_order.order_id(), unmatched_orders, market_order.size());
                 tokio::spawn(async move {
                     if let Err(e) = market_order.client().tx().send(msg).await {
                         eprintln!("Error writing to channel: {e}");

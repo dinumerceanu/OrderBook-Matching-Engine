@@ -17,16 +17,18 @@ pub struct MarketOrder {
     fill_size: usize,
     side: MarketSide,
     client: Client,
+    order_id: String,
 }
 
 impl MarketOrder {
-    pub fn new(timestamp: DateTime<Utc>, size: usize, fill_size: usize, side: MarketSide, client: Client) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, size: usize, fill_size: usize, side: MarketSide, client: Client, order_id: String) -> Self {
         MarketOrder {
             timestamp,
             size,
             fill_size,
             side,
             client,
+            order_id,
         }
     }
 
@@ -53,6 +55,10 @@ impl MarketOrder {
     pub fn client(&self) -> &Client {
         &self.client
     }
+
+    pub fn order_id(&self) -> &String {
+        &self.order_id
+    }
 }
 
 #[derive(Debug)]
@@ -63,10 +69,11 @@ pub struct LimitOrder {
     side: MarketSide,
     price: usize,
     client: Client,
+    order_id: String,
 }
 
 impl LimitOrder {
-    pub fn new(timestamp: DateTime<Utc>, size: usize, fill_size: usize, side: MarketSide, price: usize, client: Client) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, size: usize, fill_size: usize, side: MarketSide, price: usize, client: Client, order_id: String) -> Self {
         LimitOrder {
             timestamp,
             size,
@@ -74,6 +81,7 @@ impl LimitOrder {
             side,
             price,
             client,
+            order_id,
         }
     }
 
@@ -103,6 +111,10 @@ impl LimitOrder {
 
     pub fn client(&self) -> &Client {
         &self.client
+    }
+
+    pub fn order_id(&self) -> &String {
+        &self.order_id
     }
 }
 
