@@ -48,15 +48,16 @@ cargo run --bin client
 ```
 
 You can send commands like:
+(order_id is added in order to be compatible with the FIX server)
 - **Market orders:**
   ```
-  buy market 50
-  sell market 30
+  buy market 50 <order_id>
+  sell market 30 <order_id>
   ```
 - **Limit orders:**
   ```
-  buy limit 120 10
-  sell limit 90 5
+  buy limit 120 10 <order_id>
+  sell limit 90 5 <order_id>
   ```
 
 ### 3. Seed the orderbook with random orders (optional)
